@@ -8,25 +8,26 @@ use Illuminate\Http\Request;
 class ContactController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Contact::query();
+    {
+        $query = Contact::query();
 
-    if ($request->has('search')) {
-        $search = $request->input('search');
-        $query->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+        }
+
+        // Sorting functionality
+        $sortBy = $request->input('sort_by', 'name');
+        if (in_array($sortBy, ['name', 'created_at'])) {
+            $query->orderBy($sortBy, 'asc');
+        }
+
+        $contacts = $query->paginate(10);
+
+        return view('contacts.index', compact('contacts'));
     }
-
-    $sort = $request->input('sort');
-    // Validate that sort is either 'name' or 'created_at' (or other valid columns)
-    if (in_array($sort, ['name', 'created_at'])) {
-        $query->orderBy($sort);
-    }
-
-    $contacts = $query->paginate(10);
-
-    return view('contacts.index', compact('contacts'));
-}
 
     public function create()
     {
@@ -44,7 +45,7 @@ class ContactController extends Controller
 
         Contact::create($request->all());
 
-        return redirect()->route('contacts.index')->with('success', 'Contact created successfully.');
+        return redirect()->route('contacts.index');
     }
 
     public function show(Contact $contact)
@@ -68,12 +69,13 @@ class ContactController extends Controller
 
         $contact->update($request->all());
 
-        return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
+        return redirect()->route('contacts.index');
     }
 
     public function destroy(Contact $contact)
     {
         $contact->delete();
-        return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully.');
+
+        return redirect()->route('contacts.index');
     }
 }
